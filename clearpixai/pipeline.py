@@ -46,9 +46,9 @@ class DiffusionConfig:
         "watermark, text, logo, signature, writing, letters, words, blurry, distorted, artifacts, objects"
     )
     num_inference_steps: int = 100
-    guidance_scale: float = 35.0
-    strength: float = 0.99
-    padding: int = 32
+    guidance_scale: float = 10.0
+    strength: float = 0.999
+    padding: int = 16
     scheduler: str = "dpm++"
     guidance_rescale: float | None = None
     seed: int | None = None
@@ -67,7 +67,7 @@ class SegmentationConfig:
     encoder: str = "mit_b5"
     encoder_weights: str | None = None
     image_size: int | None = None
-    threshold: float = 0.001
+    threshold: float = 0.004
     device: str = "auto"
     seed: int | None = None
 

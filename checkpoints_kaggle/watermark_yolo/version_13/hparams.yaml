@@ -1,0 +1,7 @@
+classes: 1
+encoder_name: mit_b5
+encoder_weights: imagenet
+in_channels: 3
+learning_rate: 0.0001
+loss_fn: combined
+pretrained_checkpoint: clearpixai/detection/best_watermark_model_mit_b5_best.pth
