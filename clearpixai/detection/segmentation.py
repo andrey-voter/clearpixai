@@ -15,13 +15,21 @@ logger = logging.getLogger(__name__)
 
 
 def _load_state_dict(model, state_dict):
-    """Load state dict while stripping common Lightning prefixes."""
+    """Load state dict while stripping common Lightning prefixes and metadata."""
 
     if "state_dict" in state_dict:
         state_dict = state_dict["state_dict"]
 
+    # Known metadata keys to exclude (normalization stats, etc.)
+    metadata_keys = {"std", "mean"}
+
     cleaned = {}
     for key, value in state_dict.items():
+        # Skip metadata keys
+        if key in metadata_keys:
+            continue
+        
+        # Strip common prefixes
         if key.startswith("model."):
             cleaned[key[len("model."):]] = value
         elif key.startswith("net."):

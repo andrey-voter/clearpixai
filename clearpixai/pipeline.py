@@ -45,7 +45,7 @@ class DiffusionConfig:
     negative_prompt: str = (
         "watermark, text, logo, signature, writing, letters, words, blurry, distorted, artifacts, objects"
     )
-    num_inference_steps: int = 150
+    num_inference_steps: int = 100
     guidance_scale: float = 35.0
     strength: float = 0.99
     padding: int = 32
