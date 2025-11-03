@@ -24,14 +24,20 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="""
 Example usage:
 
-  # Basic usage (uses default settings from pipeline.py)
+  # Basic usage (uses SDXL backend by default for best quality)
   clearpixai -i input.jpg -o output.jpg
+
+  # Use legacy Stable Diffusion 2.0 (faster but lower quality)
+  clearpixai -i input.jpg -o output.jpg --diffusion-backend sd
 
   # With custom weights
   clearpixai -i input.jpg -o output.jpg --segmentation-weights /path/to/model.pth
 
   # Override specific parameters
   clearpixai -i input.jpg -o output.jpg --threshold 0.3 --diffusion-steps 100
+
+  # Use specific GPU
+  clearpixai -i input.jpg -o output.jpg --gpu 2
 
 Note: All default values are defined in pipeline.py config classes.
       CLI arguments only override when explicitly provided.
@@ -99,9 +105,15 @@ Note: All default values are defined in pipeline.py config classes.
     # Diffusion options
     diffusion_group = parser.add_argument_group("Diffusion inpainting options")
     diffusion_group.add_argument(
+        "--diffusion-backend",
+        choices=["sd", "sdxl"],
+        default=None,
+        help="Inpainting backend: 'sd' (Stable Diffusion 2.0) or 'sdxl' (SDXL, better quality, default)",
+    )
+    diffusion_group.add_argument(
         "--diffusion-model",
         default=None,
-        help="Diffusion model ID",
+        help="Diffusion model ID (overrides default for chosen backend)",
     )
     diffusion_group.add_argument(
         "--diffusion-steps",
@@ -214,6 +226,8 @@ def build_config(args: argparse.Namespace) -> PipelineConfig:
     if args.mask_blur is not None:
         mask.blur_radius = args.mask_blur
 
+    if args.diffusion_backend is not None:
+        diffusion.backend = args.diffusion_backend
     if args.diffusion_model is not None:
         diffusion.model_id = args.diffusion_model
     if args.diffusion_steps is not None:
