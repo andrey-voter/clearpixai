@@ -4,6 +4,7 @@ from .base import BaseDetector, DetectionResult, DetectorNotAvailable, RegionPre
 from .easyocr import EasyOCRDetector
 from .florence2 import Florence2Detector
 from .grounding_sam import GroundingSAMDetector
+from .segmentation import WatermarkSegmentationDetector
 
 __all__ = [
     "BaseDetector",
@@ -13,6 +14,7 @@ __all__ = [
     "EasyOCRDetector",
     "Florence2Detector",
     "GroundingSAMDetector",
+    "WatermarkSegmentationDetector",
 ]
 
 

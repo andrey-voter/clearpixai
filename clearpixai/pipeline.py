@@ -13,6 +13,7 @@ from .detection.base import DetectionError, DetectionResult, DetectorNotAvailabl
 from .detection.easyocr import EasyOCRDetector
 from .detection.florence2 import Florence2Detector
 from .detection.grounding_sam import GroundingSAMDetector
+from .detection.segmentation import WatermarkSegmentationDetector
 from .inpaint.opencv import inpaint as opencv_inpaint
 from .inpaint.stable_diffusion import StableDiffusionInpainter, StableDiffusionSettings
 from .mask import predictions_to_mask
@@ -41,11 +42,11 @@ class DiffusionConfig:
     negative_prompt: str = (
         "watermark, text, logo, signature, writing, letters, words, blurry, distorted, artifacts, objects"
     )
-    num_inference_steps: int = 65
-    guidance_scale: float = 10.0
+    num_inference_steps: int = 150
+    guidance_scale: float = 35.0
     strength: float = 0.99
     padding: int = 5
-    scheduler: str = "dpm++"
+    scheduler: str = "euler"
     guidance_rescale: float | None = None
     seed: int | None = None
     blend_with_original: float = 0.0
@@ -61,10 +62,15 @@ class DetectionConfig:
     device: str = "auto"
     hf_token: str | None = None
     easyocr_languages: Sequence[str] = field(default_factory=lambda: ("en",))
-    box_threshold: float = 0.3
-    text_threshold: float = 0.25
+    box_threshold: float = 0.1
+    text_threshold: float = 0.1
     florence_num_beams: int = 3
     florence_max_new_tokens: int = 256
+    segmentation_weights: Path | None = None
+    segmentation_encoder: str = "mit_b5"
+    segmentation_encoder_weights: str | None = None
+    segmentation_image_size: int | None = None
+    segmentation_threshold: float = 1e-12
     seed: int | None = None
 
 
@@ -109,6 +115,19 @@ def _build_detector(name: str, cfg: DetectionConfig, device: str):
             num_beams=cfg.florence_num_beams,
             max_new_tokens=cfg.florence_max_new_tokens,
             hf_token=cfg.hf_token,
+        )
+    if name in {"segmentation", "segment", "dd_segmentation"}:
+        if cfg.segmentation_weights is None:
+            raise DetectorNotAvailable(
+                "Segmentation detector requires --segmentation-weights pointing to the trained checkpoint."
+            )
+        return WatermarkSegmentationDetector(
+            weights_path=cfg.segmentation_weights,
+            encoder_name=cfg.segmentation_encoder,
+            encoder_weights=cfg.segmentation_encoder_weights,
+            image_size=cfg.segmentation_image_size,
+            threshold=cfg.segmentation_threshold,
+            device=device,
         )
     raise ValueError(f"Unknown detector '{name}'")
 

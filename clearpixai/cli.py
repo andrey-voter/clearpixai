@@ -52,7 +52,7 @@ Example usage:
 
     parser.add_argument(
         "--detector",
-        choices=["easyocr", "grounding_sam", "florence2"],
+        choices=["easyocr", "grounding_sam", "florence2", "segmentation"],
         default="easyocr",
         help="Primary detector to use",
     )
@@ -72,6 +72,11 @@ Example usage:
         "--florence2",
         action="store_true",
         help="Alias for --detector florence2",
+    )
+    parser.add_argument(
+        "--segmentation",
+        action="store_true",
+        help="Alias for --detector segmentation",
     )
     parser.add_argument("--prompt", type=str, default=None, help="Text prompt for detectors")
     parser.add_argument(
@@ -145,6 +150,42 @@ Example usage:
         help="Save the generated mask alongside the output",
     )
     parser.add_argument(
+        "--segmentation-weights",
+        type=str,
+        default=None,
+        help="Path to Diffusion Dynamics watermark-segmentation checkpoint",
+    )
+    parser.add_argument(
+        "--segmentation-encoder",
+        type=str,
+        default="mit_b5",
+        help="Encoder backbone name for segmentation-models-pytorch (e.g., mit_b5)",
+    )
+    parser.add_argument(
+        "--segmentation-encoder-weights",
+        type=str,
+        default=None,
+        help="Pretrained encoder weights identifier (e.g., imagenet)",
+    )
+    parser.add_argument(
+        "--segmentation-threshold",
+        type=float,
+        default=0.5,
+        help="Probability threshold for segmentation mask binarisation",
+    )
+    parser.add_argument(
+        "--segmentation-image-size",
+        type=int,
+        default=None,
+        help="Optional square resize dimension before segmentation inference",
+    )
+    parser.add_argument(
+        "--segmentation-dilate",
+        type=int,
+        default=0,
+        help="Post-process mask dilation kernel size (pixels)",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose logging",
@@ -161,6 +202,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         args.detector = "grounding_sam"
     if args.florence2:
         args.detector = "florence2"
+    if args.segmentation:
+        args.detector = "segmentation"
     if args.quality:
         args.mode = "quality"
     if args.cpu:
@@ -189,7 +232,13 @@ def build_config(args: argparse.Namespace) -> PipelineConfig:
         detection.easyocr_languages = tuple(args.languages)
     detection.box_threshold = args.box_threshold
     detection.text_threshold = args.text_threshold
-    detection.seed = args.detection_seed if args.detection_seed is not None else args.seed
+    if args.segmentation_weights:
+        detection.segmentation_weights = Path(args.segmentation_weights)
+    detection.segmentation_encoder = args.segmentation_encoder
+    detection.segmentation_encoder_weights = args.segmentation_encoder_weights
+    detection.segmentation_threshold = args.segmentation_threshold
+    detection.segmentation_image_size = args.segmentation_image_size
+    detection.segmentation_dilate = args.segmentation_dilate
 
     mask = MaskConfig()
 
