@@ -1,150 +1,190 @@
 # ClearPixAi
 
-AI-powered watermark removal pipeline inspired by the [ComfyUI workflow](https://comfyui.org/en/ai-powered-watermark-removal-workflow). ClearPixAi now ships as a modular toolkit with interchangeable detectors and inpainting strategies that can be composed from the command line or imported in Python code.
+**Simple and focused watermark removal using segmentation and diffusion.**
 
-## Highlights
+ClearPixAi is a streamlined AI-powered watermark removal tool that uses:
+- **Segmentation** for watermark detection (Diffusion Dynamics model)
+- **Stable Diffusion** for high-quality inpainting
 
-- **Modular architecture** – decoupled detection, mask building, and inpainting modules
-- **Multiple detectors** – EasyOCR (text), Florence-2 (vision-language), GroundingDINO + SAM (logos & graphics), Diffusion Dynamics segmentation (dense masks)
-- **Two inpainting modes** – fast OpenCV Telea and quality Stable Diffusion crop→sample→stitch
-- **Robust fallbacks** – automatically cascade through detectors when dependencies or weights are missing
-- **`uv` native** – reproducible environments via `uv sync` and `uv run`
+## Features
 
-## Detection Options
-
-| Detector | Best for | Requirements |
-|----------|----------|--------------|
-| `easyocr` (default) | Text-based watermarks | Works out of the box |
-| `florence2` | OCR regions with bounding boxes | `transformers`, `timm`, `einops`, Hugging Face token (optional) |
-| `grounding_sam` | Logos, signatures, complex graphics | Install GroundingDINO + SAM weights (see `INSTALL_GROUNDING_SAM.md`) |
-| `segmentation` | Dense watermark masks | Download Diffusion Dynamics checkpoint and install `segmentation-models-pytorch` ([Diffusion Dynamics, 2025](https://github.com/Diffusion-Dynamics/watermark-segmentation)) |
-
-**Fallbacks** – use `--fallback-detector` to provide a list. ClearPixAi will try the primary detector followed by fallbacks until one produces a mask.
+- 🎯 **Single-purpose architecture** – no complex fallbacks or mode switches
+- 🔍 **Segmentation-based detection** – precise watermark masks using Diffusion Dynamics checkpoint
+- 🎨 **Diffusion inpainting** – high-quality results with Stable Diffusion 2
+- ⚡ **Simple CLI** – straightforward command-line interface
+- 🐍 **Python API** – easy to integrate into your own scripts
 
 ## Quick Start
 
+### 1. Install Dependencies
+
 ```bash
-# 1. Install core dependencies
+# Using uv (recommended)
 uv sync
 
-# 2. (Optional) Install Florence-2 dependencies are already included.
-
-# 3. (Optional) Install GroundingDINO + SAM
-uv pip install git+https://github.com/IDEA-Research/GroundingDINO.git \
-              git+https://github.com/facebookresearch/segment-anything.git
-
-# 4. (Optional) Download Diffusion Dynamics segmentation checkpoint
-# https://github.com/Diffusion-Dynamics/watermark-segmentation
-# Example:
-# wget https://pub-1039b7ab1ee541c1a1f5ff68ddc309ce.r2.dev/best_watermark_model_mit_b5_best.pth -P checkpoints/
+# Or using pip
+pip install -e .
 ```
 
-Download weights to `~/.cache/clearpixai/weights` or use `--weights-dir` to override. See `INSTALL_GROUNDING_SAM.md` for details.
+### 2. Get Segmentation Model (Optional)
 
-## CLI Usage
+The default weights are included at `clearpixai/detection/best_watermark_model_mit_b5_best.pth`.
 
-All commands can be executed with either `uv run clearpixai ...` or `uv run python run.py ...` (the latter keeps backward compatibility).
+To use a different model, download the Diffusion Dynamics checkpoint:
 
 ```bash
-# Fast mode (OpenCV + EasyOCR)
-uv run clearpixai -i tests/watermark.jpg -o outputs/clean.jpg
+# Download the pre-trained model
+wget https://pub-1039b7ab1ee541c1a1f5ff68ddc309ce.r2.dev/best_watermark_model_mit_b5_best.pth
 
-# Quality mode with Stable Diffusion
-uv run clearpixai -i tests/watermark.jpg -o outputs/clean.jpg --quality
-
-# Florence-2 detector with custom prompt (falls back to EasyOCR)
-uv run clearpixai -i tests/watermark.jpg -o outputs/clean.jpg \
-  --detector florence2 --fallback-detector easyocr \
-  --prompt "watermark; logo; signature"
-
-# GroundingDINO + SAM with Stable Diffusion
-uv run clearpixai -i tests/watermark.jpg -o outputs/clean.jpg \
-  --quality --detector grounding_sam --prompt "logo. watermark."
-
-# Segmentation detector (Diffusion Dynamics checkpoint)
-uv run clearpixai -i tests/watermark.jpg -o outputs/clean.jpg \
-  --detector segmentation \
-  --segmentation-weights checkpoints/best_watermark_model_mit_b5_best.pth \
-  --segmentation-threshold 0.45 \
-  --segmentation-dilate 3
-
-# Save generated mask and force CPU execution
-uv run clearpixai -i tests/watermark.jpg -o outputs/clean.jpg \
-  --save-mask --cpu
+# Or get it from: https://github.com/Diffusion-Dynamics/watermark-segmentation
 ```
 
-### Common Flags
+### 3. Run Watermark Removal
 
-- `--mode {fast,quality}` – choose OpenCV or Stable Diffusion inpainting
-- `--detector {easyocr,florence2,grounding_sam,segmentation}` – primary detector
-- `--fallback-detector ...` – optional cascade of fallback detectors
-- `--prompt` – text prompt for Florence-2 and GroundingDINO
-- `--weights-dir` – directory containing model checkpoints (`~/.cache/clearpixai/weights` by default)
-- `--hf-token` – Hugging Face token for Florence-2 (can also be provided via env vars)
-- `--segmentation-weights` – path to Diffusion Dynamics checkpoint (`*.pth`)
-- `--segmentation-threshold` – probability cut-off for the segmentation mask
-- `--segmentation-dilate` – integer kernel size to dilate the segmentation mask (helps cover halos)
-- `--gpu` / `--cpu` / `--device` – device selection helpers
-- `--save-mask` – store the union mask next to the output image
-- `--verbose` – enable debug logging
+```bash
+# Basic usage (uses default weights)
+uv run clearpixai -i input.jpg -o output.jpg
 
-Run `uv run clearpixai --help` for the full reference.
+# With custom weights
+uv run clearpixai -i input.jpg -o output.jpg --segmentation-weights /path/to/model.pth
 
-## Workflow Overview
+# With custom threshold
+uv run clearpixai -i input.jpg -o output.jpg --threshold 0.3
 
-```
-Input Image
-   │
-   ├─ Detection (EasyOCR / Florence-2 / GroundingDINO+SAM / Segmentation)
-   │       ↓
-   ├─ Mask builder (expand + dilate + Gaussian blur)
-   │       ↓
-   └─ Inpainting
-           ├─ Fast mode → OpenCV Telea
-           └─ Quality mode → Stable Diffusion crop → sample → stitch
+# Save the mask for inspection
+uv run clearpixai -i input.jpg -o output.jpg --save-mask
 ```
 
-Each stage can be reused independently via the Python API (`clearpixai.detection`, `clearpixai.mask`, `clearpixai.inpaint`).
+## CLI Options
 
-## Model Assets
+### Required Arguments
 
-| Model | Purpose | Where to place |
-|-------|---------|----------------|
-| `groundingdino_swint_ogc.pth` | GroundingDINO weights | `~/.cache/clearpixai/weights` (default) |
-| `sam_vit_h_4b8939.pth` | Segment Anything | same as above |
-| Stable Diffusion 2 Inpainting | Quality mode | Downloaded automatically by `diffusers` |
+- `-i, --input` – Input image path
+- `-o, --output` – Output image path
 
-See `INSTALL_GROUNDING_SAM.md` for helper commands.
+### Optional Arguments
 
-## Architecture
+- `-w, --segmentation-weights` – Path to segmentation model checkpoint (default: clearpixai/detection/best_watermark_model_mit_b5_best.pth)
 
-- `clearpixai/cli.py` – argument parsing & logging configuration
-- `clearpixai/pipeline.py` – orchestration, detector fallback logic, mask + inpainting flow
-- `clearpixai/detection/` – detector implementations (EasyOCR, Florence-2, GroundingDINO+SAM, Diffusion Dynamics segmentation)
-- `clearpixai/mask.py` – mask aggregation (expansion, dilation, blur)
-- `clearpixai/inpaint/` – OpenCV and Stable Diffusion utilities
+### Segmentation Options
 
-The `clearpixai` package can be imported directly for scripting:
+- `--segmentation-encoder` – Encoder backbone (default: mit_b5)
+- `--segmentation-encoder-weights` – Pretrained encoder weights (e.g., imagenet)
+- `--threshold` – Probability threshold for mask binarization (default: 0.5)
+- `--segmentation-image-size` – Optional square resize dimension before inference
+
+### Mask Processing Options
+
+- `--mask-expand` – Mask expansion ratio (default: 0.15)
+- `--mask-dilate` – Mask dilation kernel size in pixels (default: 10)
+- `--mask-blur` – Mask blur radius (default: 5)
+
+### Diffusion Options
+
+- `--diffusion-model` – Diffusion model ID (default: stabilityai/stable-diffusion-2-inpainting)
+- `--diffusion-steps` – Number of inference steps (default: 150)
+- `--diffusion-guidance` – Guidance scale (default: 35.0)
+- `--diffusion-strength` – Diffusion strength (default: 0.99)
+- `--diffusion-prompt` – Custom positive prompt
+- `--diffusion-negative-prompt` – Custom negative prompt
+- `--blend-with-original` – Blend ratio with original (0.0-1.0)
+
+### General Options
+
+- `--device` – Computation device: auto, cpu, cuda (default: auto)
+- `--gpu` – Set CUDA_VISIBLE_DEVICES (e.g., '0')
+- `--seed` – Random seed for reproducibility
+- `--save-mask` – Save the generated mask alongside output
+- `-v, --verbose` – Enable verbose logging
+
+Run `clearpixai --help` for the complete list.
+
+## Python API
 
 ```python
 from pathlib import Path
 from clearpixai.pipeline import PipelineConfig, remove_watermark
 
+# Configure pipeline (uses default weights)
 config = PipelineConfig()
-config.mode = "quality"
-config.detection.detector = "florence2"
-config.detection.fallback_detectors = ("easyocr",)
+config.segmentation.threshold = 0.5
+config.diffusion.num_inference_steps = 150
+config.save_mask = True
 
-remove_watermark(Path("photo.jpg"), Path("photo_clean.jpg"), config)
+# Or override weights
+# config.segmentation.weights = Path("/path/to/custom_weights.pth")
+
+# Run watermark removal
+remove_watermark(
+    input_path=Path("input.jpg"),
+    output_path=Path("output.jpg"),
+    config=config
+)
 ```
+
+## Workflow
+
+```
+Input Image
+    │
+    ├─ Segmentation Detection
+    │   └─ WatermarkSegmentationDetector (Diffusion Dynamics)
+    │
+    ├─ Mask Processing
+    │   └─ Expand → Dilate → Blur
+    │
+    └─ Diffusion Inpainting
+        └─ Stable Diffusion 2
+            └─ Output Image
+```
+
+## Project Structure
+
+```
+clearpixai/
+├── cli.py              # Command-line interface
+├── pipeline.py         # Main orchestration logic
+├── mask.py            # Mask processing utilities
+├── detection/
+│   ├── base.py        # Base detector interface
+│   └── segmentation.py # Segmentation detector
+└── inpaint/
+    └── stable_diffusion.py # Diffusion inpainting
+```
+
+## Dependencies
+
+- **torch** – PyTorch for deep learning
+- **diffusers** – Stable Diffusion implementation
+- **transformers** – Hugging Face models support
+- **segmentation-models-pytorch** – Segmentation architecture
+- **pillow** – Image processing
+- **numpy** – Numerical operations
 
 ## Troubleshooting
 
-- **No detections** – add `--fallback-detector easyocr`, tweak `--prompt`, or lower `--box-threshold`
-- **Florence-2 errors** – ensure `timm` and `einops` are installed and pass `--hf-token` if the model requires authentication
-- **GroundingDINO errors** – double-check weights and installation steps in `INSTALL_GROUNDING_SAM.md`
-- **Segmentation errors** – verify `segmentation-models-pytorch` is installed and `--segmentation-weights` points to the downloaded Diffusion Dynamics checkpoint
-- **CUDA OOM** – use `--mode fast` or `--cpu`, or reduce image dimensions before processing
+### No watermarks detected
+
+- Lower the threshold: `--threshold 0.3` or `--threshold 0.1`
+- Check that your segmentation weights are correct
+- Use `--save-mask` to inspect what's being detected
+
+### CUDA out of memory
+
+- Use CPU mode: `--device cpu`
+- Reduce diffusion steps: `--diffusion-steps 50`
+- Use `--segmentation-image-size 512` to process smaller images
+
+### Poor inpainting quality
+
+- Increase inference steps: `--diffusion-steps 200`
+- Adjust guidance scale: `--diffusion-guidance 20.0` or `--diffusion-guidance 50.0`
+- Experiment with mask dilation: `--mask-dilate 15`
+
+## Credits
+
+- Segmentation model from [Diffusion Dynamics](https://github.com/Diffusion-Dynamics/watermark-segmentation)
+- Inspired by various ComfyUI watermark removal workflows
 
 ## License
 
