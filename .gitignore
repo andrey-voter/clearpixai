@@ -193,3 +193,5 @@ cython_debug/
 *.gif
 *.bmp
 *.tiff
+
+*.txt
