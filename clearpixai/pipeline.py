@@ -9,7 +9,13 @@ from pathlib import Path
 from PIL import Image
 
 from .detection.segmentation import WatermarkSegmentationDetector
-from .inpaint.stable_diffusion import StableDiffusionInpainter, StableDiffusionSettings
+from .inpaint import (
+    BaseInpainter,
+    StableDiffusionInpainter,
+    StableDiffusionSettings,
+    SDXLInpainter,
+    SDXLInpainterSettings,
+)
 from .mask import predictions_to_mask
 from .utils.random import set_random_seed
 
@@ -33,27 +39,30 @@ class MaskConfig:
 
 @dataclass
 class DiffusionConfig:
-    """Stable Diffusion inpainting configuration.
+    """Diffusion inpainting configuration.
     
     These defaults are the single source of truth.
     CLI only overrides when explicitly provided.
     """
-    model_id: str = "stabilityai/stable-diffusion-2-inpainting"
+    backend: str = "sdxl"  # Options: "sd", "sdxl"
+    model_id: str | None = None  # Auto-selected based on backend if None
     prompt: str = (
-        "clean background, people look natural, seamless surface, no watermark, no text, natural texture, high quality"
+        "high quality, photorealistic, clean surface, seamless, natural lighting, "
+        "professional photography, sharp focus"
     )
     negative_prompt: str = (
-        "watermark, text, logo, signature, writing, letters, words, blurry, distorted, artifacts, objects"
+        "watermark, text, logo, signature, writing, letters, words, blurry, "
+        "distorted, artifacts, low quality, jpeg artifacts"
     )
-    num_inference_steps: int = 100
-    guidance_scale: float = 10.0
+    num_inference_steps: int = 50
+    guidance_scale: float = 8.0
     strength: float = 0.999
-    padding: int = 16
-    scheduler: str = "dpm++"
-    guidance_rescale: float | None = None
+    padding: int = 32
+    scheduler: str = "euler"
+    guidance_rescale: float | None = 0.7
     seed: int | None = None
     blend_with_original: float = 0.0
-    mask_feather: int = 0
+    mask_feather: int = 8
 
 
 @dataclass
@@ -150,27 +159,58 @@ def remove_watermark(input_path: Path, output_path: Path, config: PipelineConfig
         logger.info("Saving mask to %s", mask_path)
         mask.save(mask_path)
 
-    # Inpaint using Stable Diffusion
-    logger.info("Inpainting with Stable Diffusion")
-    settings = StableDiffusionSettings(
-        model_id=config.diffusion.model_id,
-        prompt=config.diffusion.prompt,
-        negative_prompt=config.diffusion.negative_prompt,
-        num_inference_steps=config.diffusion.num_inference_steps,
-        guidance_scale=config.diffusion.guidance_scale,
-        strength=config.diffusion.strength,
-        padding=config.diffusion.padding,
-        scheduler=config.diffusion.scheduler,
-        guidance_rescale=config.diffusion.guidance_rescale,
-        seed=(
-            config.diffusion.seed
-            if config.diffusion.seed is not None
-            else config.seed
-        ),
-        blend_with_original=config.diffusion.blend_with_original,
-        mask_feather=config.diffusion.mask_feather,
-    )
-    inpainter = StableDiffusionInpainter(device=device, settings=settings)
+    # Select and configure inpainter based on backend
+    backend = (config.diffusion.backend or "sdxl").lower()
+    logger.info("Inpainting with backend: %s", backend)
+    
+    inpainter: BaseInpainter
+    if backend == "sd":
+        # Legacy Stable Diffusion 2.0
+        model_id = config.diffusion.model_id or "stabilityai/stable-diffusion-2-inpainting"
+        settings = StableDiffusionSettings(
+            model_id=model_id,
+            prompt=config.diffusion.prompt,
+            negative_prompt=config.diffusion.negative_prompt,
+            num_inference_steps=config.diffusion.num_inference_steps,
+            guidance_scale=config.diffusion.guidance_scale,
+            strength=config.diffusion.strength,
+            padding=config.diffusion.padding,
+            scheduler=config.diffusion.scheduler,
+            guidance_rescale=config.diffusion.guidance_rescale,
+            seed=(
+                config.diffusion.seed
+                if config.diffusion.seed is not None
+                else config.seed
+            ),
+            blend_with_original=config.diffusion.blend_with_original,
+            mask_feather=config.diffusion.mask_feather,
+        )
+        inpainter = StableDiffusionInpainter(device=device, settings=settings)
+    elif backend == "sdxl":
+        # SDXL for better quality
+        model_id = config.diffusion.model_id or "diffusers/stable-diffusion-xl-1.0-inpainting-0.1"
+        settings = SDXLInpainterSettings(
+            model_id=model_id,
+            prompt=config.diffusion.prompt,
+            negative_prompt=config.diffusion.negative_prompt,
+            num_inference_steps=config.diffusion.num_inference_steps,
+            guidance_scale=config.diffusion.guidance_scale,
+            strength=config.diffusion.strength,
+            padding=config.diffusion.padding,
+            scheduler=config.diffusion.scheduler,
+            guidance_rescale=config.diffusion.guidance_rescale,
+            seed=(
+                config.diffusion.seed
+                if config.diffusion.seed is not None
+                else config.seed
+            ),
+            blend_with_original=config.diffusion.blend_with_original,
+            mask_feather=config.diffusion.mask_feather,
+        )
+        inpainter = SDXLInpainter(device=device, settings=settings)
+    else:
+        raise ValueError(f"Unknown inpainting backend: {backend}. Choose 'sd' or 'sdxl'.")
+    
     try:
         result = inpainter.inpaint(image, mask)
     finally:
