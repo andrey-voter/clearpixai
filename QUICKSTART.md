@@ -144,13 +144,6 @@ uv run clearpixai \
 
 You now have a trained, validated, and exported watermark detection model!
 
-## 📈 Next Steps
-
-1. **Improve Performance**: Collect more training data
-2. **Experiment**: Try different encoders in config (`encoder_name`)
-3. **Fine-tune**: Adjust hyperparameters for your specific use case
-4. **Deploy**: Integrate into your production pipeline
-
 ## 🆘 Troubleshooting
 
 ### Out of Memory (OOM)
@@ -167,8 +160,3 @@ data:
 2. Collect more diverse training samples
 3. Train for more epochs
 4. Try `loss_fn: "combined"` in config
-
-### Training Too Slow
-
-1. Use smaller encoder: `encoder_name: "resnet34"`
-2. Reduce image size: `image_size: 256`
