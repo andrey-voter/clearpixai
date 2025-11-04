@@ -6,6 +6,11 @@ ClearPixAi is a streamlined AI-powered watermark removal tool that uses:
 - **Segmentation** for watermark detection (Diffusion Dynamics model)
 - **SDXL (Stable Diffusion XL)** for state-of-the-art inpainting quality 🆕
 
+> **📚 MLOps Documentation**:
+> - **[README_MLOPS.md](README_MLOPS.md)** - Complete MLOps guide (metrics, training, deployment)
+> - **[TESTING.md](TESTING.md)** - Testing guide with 80+ tests and CI/CD
+> - **[ASSIGNMENT3_SUMMARY.md](ASSIGNMENT3_SUMMARY.md)** - Testing & CI/CD implementation summary
+
 ## Features
 
 - 🎯 **Single-purpose architecture** – no complex fallbacks or mode switches
@@ -164,19 +169,47 @@ Input Image
 
 Want to finetune the detector on your own watermarked images? It's easy!
 
-### Quick Start: Finetune in One Command
+### Quick Start: Config-Based Training (Recommended)
+
+**Production-ready training with full reproducibility:**
 
 ```bash
-# Install training dependencies (using UV)
-uv add pytorch-lightning segmentation-models-pytorch albumentations tensorboard
+# 1. Validate your dataset
+uv run python clearpixai/training/detector/validate_data.py \
+    --data-dir /path/to/your/data
 
-# Or with pip
-pip install -r requirements-training.txt
+# 2. Train with configuration file
+uv run python clearpixai/training/detector/train_from_config.py \
+    --config configs/train_config.yaml \
+    --verbose
 
-# Finetune from pretrained checkpoint (recommended!)
+# 3. Validate trained model
+uv run python clearpixai/training/detector/validate.py \
+    --checkpoint checkpoints/best_model.ckpt \
+    --data-dir /path/to/validation/data
+
+# 4. Export to HuggingFace format
+uv run python clearpixai/training/detector/export_model.py \
+    --checkpoint checkpoints/best_model.ckpt \
+    --output-dir exported_models/my_model
+```
+
+**Key Features**:
+- ✅ **Reproducible**: Fixed random seeds and deterministic operations
+- ✅ **Configurable**: All parameters in YAML config file
+- ✅ **Validated**: Data and model validation scripts
+- ✅ **Monitored**: TensorBoard logging and metrics
+- ✅ **Production-ready**: HuggingFace export format
+
+See **[README_MLOPS.md](README_MLOPS.md)** for complete documentation.
+
+### Legacy Training (Simple)
+
+```bash
+# Finetune from pretrained checkpoint (simple script)
 uv run python train_detector.py
 
-# That's it! Your model will be saved to checkpoints/
+# Your model will be saved to checkpoints/
 ```
 
 ### What You Get

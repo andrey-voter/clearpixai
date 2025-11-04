@@ -1,5 +1,10 @@
-"""Watermark detection model using PyTorch Lightning."""
+"""Watermark detection model using PyTorch Lightning.
 
+This module provides a production-ready PyTorch Lightning module for
+watermark detection using semantic segmentation with U-Net architecture.
+"""
+
+import logging
 from typing import Optional, List
 
 import pytorch_lightning as pl
@@ -8,6 +13,8 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+
+logger = logging.getLogger(__name__)
 
 
 class WatermarkDetectionModel(pl.LightningModule):
@@ -76,9 +83,6 @@ class WatermarkDetectionModel(pl.LightningModule):
         Args:
             checkpoint_path: Path to .pth checkpoint file
         """
-        import logging
-        logger = logging.getLogger(__name__)
-        
         logger.info(f"Loading pretrained weights from: {checkpoint_path}")
         
         # Load checkpoint

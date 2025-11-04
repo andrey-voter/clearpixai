@@ -76,7 +76,7 @@ class SegmentationConfig:
     encoder: str = "mit_b5"
     encoder_weights: str | None = None
     image_size: int | None = None
-    threshold: float = 0.01
+    threshold: float = 0.001
     device: str = "auto"
     seed: int | None = None
 

@@ -1,5 +1,10 @@
-"""Dataset for watermark detection training."""
+"""Dataset for watermark detection training.
 
+This module provides a PyTorch Dataset implementation for watermark detection,
+supporting automatic mask generation from watermarked/clean image pairs.
+"""
+
+import logging
 import os
 from pathlib import Path
 from typing import Tuple, Optional
@@ -10,6 +15,8 @@ import cv2
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
+
+logger = logging.getLogger(__name__)
 
 
 class WatermarkDataset(Dataset):
@@ -47,7 +54,7 @@ class WatermarkDataset(Dataset):
         self.image_pairs = self._find_image_pairs()
         
         if len(self.image_pairs) == 0:
-            raise ValueError(
+            error_msg = (
                 f"No image pairs found in {data_dir}\n\n"
                 f"Expected structures:\n\n"
                 f"Structure 1 (Subdirectories):\n"
@@ -64,19 +71,24 @@ class WatermarkDataset(Dataset):
                 f"  - image0.jpg / image0 clean.jpg\n"
                 f"  - photo_watermarked.jpg / photo_clean.jpg"
             )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
-        print(f"📸 Found {len(self.image_pairs)} image pairs in {data_dir}")
+        logger.info(f"Found {len(self.image_pairs)} image pairs in {data_dir}")
         # Show first few pairs for verification
         for i, pair in enumerate(self.image_pairs[:3]):
-            print(f"  Pair {i+1}: {pair['watermarked'].name} → {pair['clean'].name}")
+            logger.debug(f"  Pair {i+1}: {pair['watermarked'].name} → {pair['clean'].name}")
         if len(self.image_pairs) > 3:
-            print(f"  ... and {len(self.image_pairs) - 3} more pairs")
+            logger.info(f"  ... and {len(self.image_pairs) - 3} more pairs")
         
         # Limit to max_samples if specified
         total_available = len(self.image_pairs)
         if self.max_samples is not None and self.max_samples < total_available:
             self.image_pairs = self.image_pairs[:self.max_samples]
-            print(f"⚠️  Using {len(self.image_pairs)} of {total_available} image pairs (max_samples={self.max_samples})")
+            logger.warning(
+                f"Using {len(self.image_pairs)} of {total_available} image pairs "
+                f"(max_samples={self.max_samples})"
+            )
     
     def _find_image_pairs(self):
         """Find pairs of watermarked and clean images.
@@ -107,7 +119,7 @@ class WatermarkDataset(Dataset):
         watermarked_dir = self.data_dir / "watermarked"
         
         if clean_dir.exists() and watermarked_dir.exists():
-            print(f"📂 Found clean/ and watermarked/ subdirectories")
+            logger.debug("Found clean/ and watermarked/ subdirectories")
             
             # Find all clean images
             clean_images = {}
@@ -116,7 +128,7 @@ class WatermarkDataset(Dataset):
                     base_name = clean_file.stem
                     clean_images[base_name] = clean_file
             
-            print(f"   Found {len(clean_images)} clean images")
+            logger.debug(f"Found {len(clean_images)} clean images")
             
             # Find all watermarked images and match to clean images
             watermarked_count = 0
@@ -141,13 +153,13 @@ class WatermarkDataset(Dataset):
                         })
                         watermarked_count += 1
             
-            print(f"   Found {watermarked_count} watermarked images")
-            print(f"   Created {len(pairs)} training pairs")
+            logger.debug(f"Found {watermarked_count} watermarked images")
+            logger.debug(f"Created {len(pairs)} training pairs")
             
             if len(pairs) > 0:
                 return pairs
             else:
-                print(f"   ⚠️  No pairs found in subdirectories, falling back to flat structure")
+                logger.warning("No pairs found in subdirectories, falling back to flat structure")
         
         # Structure 2: Flat directory with various naming patterns
         seen_watermarked = set()
@@ -219,7 +231,7 @@ class WatermarkDataset(Dataset):
             # Resize clean to match watermarked dimensions
             h, w = watermarked.shape[:2]
             clean = cv2.resize(clean, (w, h), interpolation=cv2.INTER_LANCZOS4)
-            print(f"⚠️  Warning: Resized clean image to match watermarked image size ({w}x{h})")
+            logger.debug(f"Resized clean image to match watermarked image size ({w}x{h})")
         
         # Convert to grayscale
         if len(watermarked.shape) == 3:
