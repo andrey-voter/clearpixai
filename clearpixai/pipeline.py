@@ -44,7 +44,7 @@ class DiffusionConfig:
     These defaults are the single source of truth.
     CLI only overrides when explicitly provided.
     """
-    backend: str = "sdxl"  # Options: "sd", "sdxl"
+    backend: str = "sd"  # Options: "sd", "sdxl"
     model_id: str | None = None  # Auto-selected based on backend if None
     prompt: str = (
         "high quality, photorealistic, clean surface, seamless, natural lighting, "
@@ -54,11 +54,11 @@ class DiffusionConfig:
         "watermark, text, logo, signature, writing, letters, words, blurry, "
         "distorted, artifacts, low quality, jpeg artifacts"
     )
-    num_inference_steps: int = 100
+    num_inference_steps: int = 50
     guidance_scale: float = 35.0
     strength: float = 0.999
     padding: int = 32
-    scheduler: str = "euler"
+    scheduler: str = "ddpm++"
     guidance_rescale: float | None = 0.7
     seed: int | None = None
     blend_with_original: float = 0.0
@@ -76,7 +76,7 @@ class SegmentationConfig:
     encoder: str = "mit_b5"
     encoder_weights: str | None = None
     image_size: int | None = None
-    threshold: float = 0.001
+    threshold: float = 0.003
     device: str = "auto"
     seed: int | None = None
 
