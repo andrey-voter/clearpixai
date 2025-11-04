@@ -25,14 +25,7 @@ ClearPixAI implements comprehensive testing following MLOps best practices:
 ✅ **CI/CD**: Automatic testing on every commit via GitHub Actions  
 ✅ **Code Quality**: Linters, formatters, and type checkers
 
-### Test Philosophy
 
-Tests focus on **correctness of preprocessing and pipeline**, not model quality:
-- ✅ Data format validation
-- ✅ Value range checks
-- ✅ Transformation correctness
-- ✅ API response format
-- ❌ Model accuracy (not tested in unit tests)
 
 ---
 
@@ -47,35 +40,12 @@ tests/
 └── test_data_validation.py        # Data validation and dataset tests
 ```
 
-### Testable Modules
-
-Code has been refactored into testable modules:
-
-```
-clearpixai/training/detector/
-├── preprocessing.py               # Testable preprocessing functions
-│   ├── create_mask_from_difference()
-│   ├── validate_image_array()
-│   ├── validate_mask_array()
-│   ├── normalize_image_array()
-│   └── denormalize_image_array()
-│
-├── postprocessing.py              # Testable postprocessing functions
-│   ├── logits_to_probabilities()
-│   ├── probabilities_to_binary_mask()
-│   ├── extract_prediction_for_api()
-│   └── batch_predictions_to_list()
-│
-├── dataset.py                     # Dataset with validation
-├── model.py                       # PyTorch Lightning model
-└── train_from_config.py           # Training script
-```
-
----
-
-## 🚀 Running Tests
 
 ### Quick Start
+first of all
+```bash
+make install-dev
+```
 
 ```bash
 # Run all tests

@@ -6,6 +6,7 @@ help:
 	@echo ""
 	@echo "Available targets:"
 	@echo "  install      - Install dependencies"
+	@echo "  install-dev  - Install dependencies with dev tools"
 	@echo "  test         - Run all tests"
 	@echo "  test-fast    - Run fast tests only (no GPU, no slow)"
 	@echo "  test-cov     - Run tests with coverage report"
@@ -17,8 +18,14 @@ help:
 # Install dependencies
 install:
 	@echo "Installing dependencies..."
-	pip install -r requirements.txt
+	uv pip install -e .
 	@echo "Installation complete!"
+
+# Install dev dependencies
+install-dev:
+	@echo "Installing dev dependencies..."
+	uv pip install -e ".[dev]"
+	@echo "Dev installation complete!"
 
 # Run all tests
 test:

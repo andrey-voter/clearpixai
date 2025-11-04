@@ -99,8 +99,6 @@ addopts = [
     "-v",
     "--strict-markers",
     "--tb=short",
-    "--cov=clearpixai",
-    "--cov-report=term-missing",
 ]
 markers = [
     "unit: Unit tests",
