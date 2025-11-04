@@ -172,14 +172,3 @@ data:
 
 1. Use smaller encoder: `encoder_name: "resnet34"`
 2. Reduce image size: `image_size: 256`
-3. Enable GPU: `hardware.accelerator: "gpu"`
-
-## 📚 More Information
-
-- **Full Documentation**: See `README_MLOPS.md`
-- **Training Details**: See `TRAINING.md`
-- **Configuration Reference**: See `configs/train_config.yaml`
-
----
-
-**Estimated Total Time**: 10 minutes + training time  
