@@ -1,4 +1,4 @@
-# ClearPixAI - Quick Start Guide for MLOps
+# ClearPixAI - Quick Start Guide
 
 This guide will get you from zero to trained model in under 10 minutes.
 
@@ -50,7 +50,7 @@ data/
 
 ### Option B: Download Kaggle Dataset
 
-See `KAGGLE_DATASET_GUIDE.md` for instructions on downloading a large-scale watermark dataset.
+See https://www.kaggle.com/datasets/kamino/largescale-common-watermark-dataset/data
 
 ## ✅ Step 3: Validate Dataset (1 minute)
 
@@ -183,5 +183,3 @@ data:
 ---
 
 **Estimated Total Time**: 10 minutes + training time  
-**Difficulty**: Beginner-friendly ⭐⭐☆☆☆
-
