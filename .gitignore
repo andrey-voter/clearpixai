@@ -118,6 +118,7 @@ result*.jpg
 result*.jpeg
 clean*.jpg
 clean*.jpeg
+checkpoints_kaggle/
 
 # Temporary Files
 *.tmp
@@ -193,5 +194,6 @@ cython_debug/
 *.gif
 *.bmp
 *.tiff
+*.JPG
 
 *.txt

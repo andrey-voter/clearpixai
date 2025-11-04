@@ -28,6 +28,7 @@ def train(
     resume_from_checkpoint: str = None,
     pretrained_weights: str = None,
     accelerator: str = "auto",
+    gpu: int = None,
 ):
     """Train watermark detection model.
     
@@ -46,6 +47,7 @@ def train(
         resume_from_checkpoint: Path to Lightning checkpoint to resume from
         pretrained_weights: Path to pretrained model weights (.pth) for finetuning
         accelerator: Device to use ('auto', 'gpu', 'cpu')
+        gpu: Specific GPU ID to use (e.g., 0, 1, 5). If None, uses all available GPUs
     """
     # Create output directory
     output_dir = Path(output_dir)
@@ -129,11 +131,22 @@ def train(
         name="watermark_detection",
     )
     
+    # Determine devices
+    if gpu is not None:
+        # Use specific GPU
+        devices = [gpu]
+        print(f"🎮 Using GPU {gpu}")
+    else:
+        # Use default behavior (1 device)
+        devices = 1
+        if accelerator == "gpu":
+            print(f"🎮 Using default GPU")
+    
     # Trainer
     trainer = pl.Trainer(
         max_epochs=max_epochs,
         accelerator=accelerator,
-        devices=1,
+        devices=devices,
         callbacks=[checkpoint_callback, early_stop_callback, lr_monitor],
         logger=logger,
         log_every_n_steps=10,
@@ -190,7 +203,7 @@ def main():
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=8,
+        default=6,
         help="Batch size",
     )
     parser.add_argument(
@@ -243,6 +256,12 @@ def main():
         choices=["auto", "gpu", "cpu"],
         help="Device to use",
     )
+    parser.add_argument(
+        "--gpu",
+        type=int,
+        default=None,
+        help="Specific GPU ID to use (e.g., 0, 1, 5). If not specified, uses default GPU selection",
+    )
     
     args = parser.parse_args()
     
@@ -261,6 +280,7 @@ def main():
         resume_from_checkpoint=args.resume,
         pretrained_weights=args.pretrained_weights,
         accelerator=args.accelerator,
+        gpu=args.gpu,
     )
 
 
