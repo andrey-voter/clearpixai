@@ -1,162 +1,157 @@
-# ClearPixAI - Quick Start Guide
+# ClearPixAI - Quick Start
 
-This guide will get you from zero to trained model in under 10 minutes.
+This guide takes you from a fresh environment to a trained and exported watermark detection model.
 
-## 🚀 Prerequisites
+## Prerequisites
 
 - Python 3.10+
 - GPU with 8GB+ VRAM (recommended) or CPU
-- `uv` package manager installed (or use `pip`)
+- `uv` installed (recommended) or `pip`
 
-## 📦 Step 1: Install Dependencies (1 minute)
+## Install
+
+If you are working from a fresh clone:
 
 ```bash
-# Clone repository (if not already done)
 git clone <your-repo-url>
 cd clearpixai
+```
 
-# Install dependencies using uv
+Install dependencies:
+
+```bash
+# Recommended
 uv sync
 
-# Or using pip
+# Alternative
 pip install -r requirements.txt
 ```
 
-## 📊 Step 2: Prepare Your Dataset (2 minutes)
+## Prepare your dataset
 
-### Option A: Use Existing Dataset
+ClearPixAI expects paired images (watermarked + clean). 
 
-If you already have a dataset, organize it as:
+### Directory layout
 
-```
+```text
 data/
 ├── clean/
 │   ├── image001.jpg
-│   ├── image002.jpg
 │   └── ...
 └── watermarked/
     ├── image001_v1.jpg
-    ├── image001_v2.jpg
     └── ...
 ```
 
-Or flat structure:
-```
-data/
-├── image001.jpg           # Watermarked
-├── image001_clean.jpg     # Clean
-└── ...
-```
+### Option C: example dataset
 
-### Option B: Download Kaggle Dataset
+If you want a ready-made dataset, see the Kaggle dataset: [Large Scale Common Watermark Dataset](https://www.kaggle.com/datasets/kamino/largescale-common-watermark-dataset/data) or use the one I made: [my own dataset](https://disk.360.yandex.ru/d/AEUb2BnCMXGWLw).
 
-See https://www.kaggle.com/datasets/kamino/largescale-common-watermark-dataset/data
+## Validate your dataset
 
-## ✅ Step 3: Validate Dataset (1 minute)
+Before training, validate that the dataset is discoverable and pairs correctly:
 
 ```bash
-# Validate your dataset
 uv run python clearpixai/training/detector/validate_data.py \
-    --data-dir /path/to/your/data
-
-# Expected output:
-# ✅ Dataset validation PASSED
-# Dataset is ready for training with N image pairs
+  --data-dir /path/to/your/data
 ```
 
-## ⚙️ Step 4: Configure Training (1 minute)
+## Configure training
 
-Edit `configs/train_config.yaml`:
+Edit `configs/train_config.yaml` and set at minimum:
+
+- `data.data_dir`: path to your dataset
+- `data.batch_size`: reduce if you hit OOM
+
+Example configuration:
 
 ```yaml
-# Update these key settings
 random_seed: 42
 
 data:
-  data_dir: "/path/to/your/data"  # ← UPDATE THIS
-  batch_size: 8                    # Reduce to 4 if OOM
+  data_dir: "/path/to/your/data"
+  batch_size: 8
   image_size: 512
 
 training:
   learning_rate: 0.0001
-  max_epochs: 50                   # Start with 50 epochs
+  max_epochs: 50
 
 pretrained:
-  use_pretrained: true             # Recommended for fast training
+  use_pretrained: true
 ```
 
-## 🏋️ Step 5: Train Model (3-60 minutes depending on dataset size)
+## Train
 
 ```bash
-# Start training
 uv run python clearpixai/training/detector/train_from_config.py \
-    --config configs/train_config.yaml \
-    --verbose
-
-# Monitor with TensorBoard (in separate terminal)
-tensorboard --logdir checkpoints
-# Open http://localhost:6006 in browser
+  --config configs/train_config.yaml \
+  --verbose
 ```
 
-**Expected Training Time**:
+Optional: monitor training with TensorBoard:
+
+```bash
+tensorboard --logdir checkpoints
+```
+
+Then open `http://localhost:6006` in your browser.
+
+Typical training time (highly dataset-dependent):
+
 - Small dataset (10-50 pairs): 3-10 minutes
 - Medium dataset (50-200 pairs): 10-30 minutes
 - Large dataset (200+ pairs): 30-60+ minutes
 
-## 📊 Step 6: Validate Model (1 minute)
+## Validate
+
+After training completes, validate a checkpoint and save metrics:
 
 ```bash
-# After training completes, validate the best checkpoint
 uv run python clearpixai/training/detector/validate.py \
-    --checkpoint checkpoints/watermark-epoch=XX-val_iou=0.XXXX.ckpt \
-    --data-dir /path/to/validation/data \
-    --output validation_metrics.json
+  --checkpoint checkpoints/watermark-epoch=XX-val_iou=0.XXXX.ckpt \
+  --data-dir /path/to/validation/data \
+  --output validation_metrics.json
 
-# Check metrics
 cat validation_metrics.json
 ```
 
-**Quality Gates**:
-- ✅ IoU ≥ 0.80: Production ready
-- ⚠️ IoU < 0.80: Need more data or training
+Quality gate (recommended): **IoU ≥ 0.80**.
 
-## 📤 Step 7: Export Model (1 minute)
+## Export
 
 ```bash
-# Export to HuggingFace format
 uv run python clearpixai/training/detector/export_model.py \
-    --checkpoint checkpoints/watermark-epoch=XX-val_iou=0.XXXX.ckpt \
-    --output-dir exported_models/my_model_v1 \
-    --model-name "my-watermark-detector-v1"
+  --checkpoint checkpoints/watermark-epoch=XX-val_iou=0.XXXX.ckpt \
+  --output-dir exported_models/my_model_v1 \
+  --model-name "my-watermark-detector-v1"
 ```
 
-## 🎯 Step 8: Use Your Model (1 minute)
+## Run inference (CLI)
+
+Use your exported segmentation weights:
 
 ```bash
-# Test watermark removal with your trained model
 uv run clearpixai \
-    -i test_image.jpg \
-    -o output_clean.jpg \
-    --segmentation-weights exported_models/my_model_v1/pytorch_model.pth
+  -i test_image.jpg \
+  -o test_image_cleaned.jpg \
+  --segmentation-weights exported_models/my_model_v1/pytorch_model.pth
 ```
 
-## 🎉 That's It!
+## Troubleshooting
 
-You now have a trained, validated, and exported watermark detection model!
+### Out of memory (OOM)
 
-## 🆘 Troubleshooting
+Reduce batch size in `configs/train_config.yaml`:
 
-### Out of Memory (OOM)
-
-Reduce batch size in config:
 ```yaml
 data:
-  batch_size: 4  # or even 2
+  batch_size: 4
 ```
 
-### Poor Results (IoU < 0.70)
+### Poor results (IoU < 0.70)
 
-1. Check if watermarks are similar to training data
-2. Collect more diverse training samples
-3. Train for more epochs
-4. Try `loss_fn: "combined"` in config
+- Confirm that your training data contains similar watermark styles to your target images.
+- Increase dataset diversity and size.
+- Train for more epochs.
+- Consider trying `loss_fn: "combined"` in the training config.
