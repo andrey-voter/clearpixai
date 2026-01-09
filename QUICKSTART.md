@@ -122,9 +122,9 @@ Quality gate (recommended): **IoU ≥ 0.80**.
 
 ```bash
 uv run python clearpixai/training/detector/export_model.py \
-  --checkpoint checkpoints/watermark-epoch=XX-val_iou=0.XXXX.ckpt \
-  --output-dir exported_models/my_model_v1 \
-  --model-name "my-watermark-detector-v1"
+  --checkpoint /home/vodjanyjan/ClearPixAi/checkpoints/last-v2.ckpt \
+  --output-dir exported_models/my_model_v3 \
+  --model-name "my-watermark-detector-v3"
 ```
 
 ## Run inference (CLI)
