@@ -235,10 +235,18 @@ ClearPixAI can be packaged as a Docker container for reproducible offline infere
 
 ### Building the Docker Image
 
+**Prerequisites:** Make sure Docker Desktop (or Docker daemon) is running before building.
+
 Build the Docker image:
 
 ```bash
 docker build -t ml-app:v1 .
+```
+
+Or using Docker Buildx (recommended):
+
+```bash
+docker buildx build -t ml-app:v1 .
 ```
 
 This will:
@@ -246,6 +254,11 @@ This will:
 - Copy the source code (`clearpixai/` package)
 - Copy the default segmentation model weights
 - Set up the entrypoint for inference
+
+**Troubleshooting:**
+- If you see "Cannot connect to the Docker daemon", make sure Docker Desktop is running
+- On macOS, start Docker Desktop from Applications
+- The legacy builder is deprecated; consider using `docker buildx` instead
 
 ### Running Inference in Docker
 
