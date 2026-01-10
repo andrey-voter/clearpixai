@@ -20,6 +20,7 @@ dependencies = [
     "tqdm>=4.65.0",
     "opencv-python>=4.8.0",
     "dvc-gdrive>=3.0.1",
+    "mlflow>=2.0.0",
 ]
 
 [project.optional-dependencies]
