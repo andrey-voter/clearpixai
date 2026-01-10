@@ -1,0 +1,68 @@
+# Ignore files for TorchServe Docker build
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.pytest_cache
+.coverage
+htmlcov
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Data and checkpoints
+data/
+checkpoints/
+*.ckpt
+mlruns/
+
+# DVC
+.dvc
+*.dvc
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Tests
+tests/
+test_*.py
+
+# Other Dockerfiles
+Dockerfile
+!Dockerfile.torchserve
+
+# Source code (not needed in TorchServe image)
+clearpixai/
+src/
+scripts/
+
+# Exported models (we only need the .mar file)
+exported_models/
+
+# Temporary files
+*.log
+*.tmp
+gmon.out
+
+# Sample files
+sample_input.json
+prepare_sample_input.py
+
