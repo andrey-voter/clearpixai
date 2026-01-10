@@ -354,6 +354,199 @@ docker run --rm --gpus all \
 
 Note: The container will automatically detect and use GPU if available.
 
+## TorchServe Deployment
+
+ClearPixAI can be deployed as an online service using [TorchServe](https://pytorch.org/serve/), which provides a REST API for model inference.
+
+### Prerequisites
+
+Install TorchServe and model archiver:
+
+```bash
+pip install torchserve torch-model-archiver
+```
+
+### Preparing Model Artifacts
+
+1. **Export model to TorchScript format**:
+
+```bash
+uv run python export_torchscript.py \
+    --weights exported_models/latest/pytorch_model.pth \
+    --config exported_models/latest/config.json \
+    --output model-store/model.pt \
+    --image-size 512
+```
+
+2. **Create TorchServe archive**:
+
+```bash
+uv run python create_torchserve_archive.py \
+    --model model-store/model.pt \
+    --handler torchserve_handler.py \
+    --config exported_models/latest/config.json \
+    --model-name mymodel \
+    --output-dir model-store
+```
+
+Or use the automated script:
+
+```bash
+./prepare_torchserve.sh
+```
+
+This will create `model-store/mymodel.mar` - the model archive ready for deployment.
+
+### Building Docker Image
+
+Build the TorchServe Docker image:
+
+```bash
+docker build -f Dockerfile.torchserve -t mymodel-serve:v1 .
+```
+
+The Dockerfile:
+- Uses `pytorch/torchserve:latest` as base image
+- Installs required dependencies (segmentation-models-pytorch, PIL, numpy)
+- Copies the model archive (`mymodel.mar`) to the model store
+- Configures TorchServe with custom `config.properties`
+- Exposes ports 8080 (inference) and 8081 (management)
+
+### Running the Container
+
+Start the TorchServe container:
+
+```bash
+docker run -d -p 8080:8080 -p 8081:8081 mymodel-serve:v1
+```
+
+The service will be available at:
+- **Inference API**: `http://localhost:8080`
+- **Management API**: `http://localhost:8081`
+
+### Testing the Service
+
+1. **Prepare sample input**:
+
+```bash
+uv run python prepare_sample_input.py test_image.jpg -o sample_input.json
+```
+
+This creates a JSON file with base64-encoded image data.
+
+2. **Send prediction request**:
+
+```bash
+curl -X POST http://localhost:8080/predictions/mymodel -T sample_input.json
+```
+
+The response will contain:
+- `mask`: Base64-encoded binary mask image (PNG format)
+- `watermark_ratio`: Percentage of image covered by watermark (0.0-1.0)
+- `max_confidence`: Maximum confidence score from the model
+- `threshold`: Threshold used for binarization
+- `mask_shape`: Shape of the mask [height, width]
+
+### REST API Endpoints
+
+#### Inference API (Port 8080)
+
+**POST `/predictions/{model_name}`**
+- **Request body**: JSON with base64-encoded image
+  ```json
+  {
+    "image": "base64_encoded_image_data",
+    "original_size": [width, height]  // optional
+  }
+  ```
+- **Response**: JSON with mask and statistics
+  ```json
+  {
+    "mask": "base64_encoded_mask_image",
+    "watermark_ratio": 0.15,
+    "max_confidence": 0.95,
+    "threshold": 0.5,
+    "mask_shape": [512, 512]
+  }
+  ```
+
+**Example with curl**:
+```bash
+curl -X POST http://localhost:8080/predictions/mymodel \
+  -H "Content-Type: application/json" \
+  -d @sample_input.json
+```
+
+#### Management API (Port 8081)
+
+**GET `/models`** - List all registered models
+```bash
+curl http://localhost:8081/models
+```
+
+**GET `/models/{model_name}`** - Get model information
+```bash
+curl http://localhost:8081/models/mymodel
+```
+
+**PUT `/models?url={model_url}`** - Register a new model
+```bash
+curl -X PUT http://localhost:8081/models?url=mymodel.mar
+```
+
+**DELETE `/models/{model_name}`** - Unregister a model
+```bash
+curl -X DELETE http://localhost:8081/models/mymodel
+```
+
+### Configuration Parameters
+
+The `config.properties` file contains TorchServe configuration:
+
+- `inference_address`: Inference API address (default: `http://0.0.0.0:8080`)
+- `management_address`: Management API address (default: `http://0.0.0.0:8081`)
+- `num_workers`: Number of worker processes (default: 1)
+- `default_workers_per_model`: Workers per model (default: 1)
+- `max_request_size`: Maximum request size in bytes (default: 6553500)
+- `max_response_size`: Maximum response size in bytes (default: 6553500)
+
+To customize, edit `config.properties` and rebuild the Docker image.
+
+### Handler Details
+
+The `torchserve_handler.py` implements:
+
+**Preprocessing**:
+- Accepts images as base64-encoded strings or file paths
+- Converts to RGB format
+- Resizes to model input size (default: 512x512)
+- Applies encoder-specific normalization (ImageNet for mit_b5)
+- Converts to tensor format [batch, channels, height, width]
+
+**Postprocessing**:
+- Applies sigmoid activation to logits
+- Thresholds mask (default: 0.5)
+- Resizes mask back to original image size if needed
+- Returns base64-encoded mask image and statistics
+
+### Troubleshooting
+
+**Model not found**:
+- Ensure the `.mar` file is in `model-store/` directory
+- Check that model name in Dockerfile CMD matches the archive name
+
+**Port already in use**:
+- Change port mappings: `docker run -d -p 8082:8080 -p 8083:8081 ...`
+- Update `config.properties` accordingly
+
+**Out of memory**:
+- Reduce `num_workers` in `config.properties`
+- Use smaller batch sizes or image sizes
+
+**Handler import errors**:
+- Ensure all dependencies are installed in the Docker image
+- Check that `torchserve_handler.py` is included in the archive
+
 ## Testing
 
 Install dev dependencies (includes `pytest`):

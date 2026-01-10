@@ -1,0 +1,35 @@
+# Dockerfile for TorchServe deployment
+FROM pytorch/torchserve:latest
+
+# Set working directory
+WORKDIR /home/model-server
+
+# Install additional dependencies
+USER root
+RUN pip install --no-cache-dir \
+    segmentation-models-pytorch>=0.3.3 \
+    pillow>=10.0.0 \
+    numpy>=1.24.0
+
+# Create model store directory
+RUN mkdir -p /home/model-server/model-store
+
+# Copy model archive
+COPY model-store/*.mar /home/model-server/model-store/
+
+# Copy config file
+COPY config.properties /home/model-server/config.properties
+
+# Set environment variables
+ENV TS_MODEL_STORE=/home/model-server/model-store
+ENV TS_MODEL_ARCHIVE=/home/model-server/model-store
+
+# Expose ports
+# 8080: Inference API
+# 8081: Management API
+EXPOSE 8080 8081
+
+# Start TorchServe
+# Note: Model name should match the .mar filename (without extension)
+CMD ["torchserve", "--start", "--model-store", "/home/model-server/model-store", "--models", "mymodel=mymodel.mar", "--ts-config", "/home/model-server/config.properties"]
+
