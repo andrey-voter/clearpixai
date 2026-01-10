@@ -95,6 +95,59 @@ The DVC pipeline allows you to:
 - Compare metrics across experiments using `dvc metrics show`
 - Switch between dataset/model versions using Git tags and `dvc checkout`
 
+## Experiment Tracking with MLflow
+
+This project uses [MLflow](https://mlflow.org/) to track training experiments, parameters, metrics, and artifacts.
+
+### MLflow Setup
+
+MLflow is automatically configured to use **local storage** (`./mlruns/` directory). Each training run creates a new experiment run with:
+
+- **Parameters**: All training configuration (learning rate, batch size, encoder name, etc.)
+- **Metrics**: Training and validation metrics (loss, IoU) logged during training
+- **Artifacts**:
+  - Training configuration file (`configs/train_config.yaml`)
+  - DVC lock file (`dvc.lock`) for reproducibility
+  - Best model checkpoint
+  - TensorBoard logs
+  - Saved training config copy
+
+### Viewing Results
+
+After training, you can view experiment results using the MLflow UI:
+
+```bash
+mlflow ui --backend-store-uri file:./mlruns
+```
+
+Then open your browser to `http://localhost:5000` to:
+- Compare different runs
+- View parameters and metrics
+- Download artifacts
+- Search and filter experiments
+
+### MLflow Storage Location
+
+All MLflow data is stored locally in:
+- **Tracking URI**: `file:./mlruns`
+- **Experiment name**: `clearpixai_watermark_detector` (or as specified in config)
+
+Each run is automatically tracked when you execute:
+
+```bash
+uv run python clearpixai/training/detector/train_from_config.py \
+  --config configs/train_config.yaml
+```
+
+The MLflow run ID is displayed in the training logs, and you can use it to reference specific runs.
+
+### What Gets Logged
+
+- **Hyperparameters**: All training parameters from config file
+- **Metrics**: `train_loss`, `val_loss`, `train_iou`, `val_iou`, `best_val_iou`, `total_epochs`
+- **Artifacts**: Config files, checkpoints, TensorBoard logs, DVC lock file
+- **Model**: PyTorch Lightning model (via autolog)
+
 ## Run instructions
 
 For a quick walk-through, see `QUICKSTART.md`. Below is the short version.
@@ -137,6 +190,12 @@ Optional (monitor training):
 
 ```bash
 tensorboard --logdir checkpoints
+```
+
+View MLflow experiments:
+
+```bash
+mlflow ui --backend-store-uri file:./mlruns
 ```
 
 ### Validate
