@@ -229,6 +229,118 @@ uv run clearpixai -i input.jpg -o output_clean.jpg \
   --segmentation-weights exported_models/my_model/pytorch_model.pth
 ```
 
+## Docker Deployment
+
+ClearPixAI can be packaged as a Docker container for reproducible offline inference.
+
+### Building the Docker Image
+
+Build the Docker image:
+
+```bash
+docker build -t ml-app:v1 .
+```
+
+This will:
+- Install all dependencies from `requirements.txt`
+- Copy the source code (`clearpixai/` package)
+- Copy the default segmentation model weights
+- Set up the entrypoint for inference
+
+### Running Inference in Docker
+
+Run the container with input/output files mounted:
+
+```bash
+docker run --rm \
+  -v /path/to/input/image.jpg:/app/input.jpg:ro \
+  -v /path/to/output:/app/output \
+  ml-app:v1 \
+  --input_path /app/input.jpg \
+  --output_path /app/output/cleaned.jpg
+```
+
+Or using relative paths:
+
+```bash
+docker run --rm \
+  -v $(pwd)/input.jpg:/app/input.jpg:ro \
+  -v $(pwd):/app/output \
+  ml-app:v1 \
+  --input_path /app/input.jpg \
+  --output_path /app/output/cleaned.jpg
+```
+
+### Docker Script Details
+
+The Docker container uses `src/predict.py` as the entrypoint, which:
+
+- **Loads the model**: Automatically loads the segmentation model from disk (default: `clearpixai/detection/best_watermark_model_mit_b5_best.pth`)
+- **Accepts arguments**:
+  - `--input_path` / `-i`: Path to input image file (required)
+  - `--output_path` / `-o`: Path to save output cleaned image (required)
+  - `--model_path` or `--segmentation-weights` / `-w`: Optional path to custom segmentation model weights (inside container)
+  - `--verbose` / `-v`: Enable verbose logging
+- **Input format**: Supports common image formats (JPG, JPEG, PNG, etc.)
+- **Output format**: Saves cleaned image as JPG with quality=95
+
+**Совместимость с CLI**: Скрипт поддерживает те же аргументы, что и `clearpixai` CLI, включая `--segmentation-weights` / `-w`.
+
+### Using Custom Model Weights
+
+**Нет необходимости пересобирать Docker образ!** Просто смонтируйте модель при запуске контейнера.
+
+Пример использования кастомной модели (аналог `uv run clearpixai -i test_image.jpg -o test_image_cleaned.jpg --segmentation-weights exported_models/my_model_v3/pytorch_model.pth`):
+
+```bash
+docker run --rm \
+  -v $(pwd)/test_image.jpg:/app/input.jpg:ro \
+  -v $(pwd)/exported_models/my_model_v3/pytorch_model.pth:/app/model.pth:ro \
+  -v $(pwd):/app/output \
+  ml-app:v1 \
+  --input_path /app/input.jpg \
+  --output_path /app/output/test_image_cleaned.jpg \
+  --segmentation-weights /app/model.pth
+```
+
+Или используя короткий вариант `-w`:
+
+```bash
+docker run --rm \
+  -v $(pwd)/test_image.jpg:/app/input.jpg:ro \
+  -v $(pwd)/exported_models/my_model_v3/pytorch_model.pth:/app/model.pth:ro \
+  -v $(pwd):/app/output \
+  ml-app:v1 \
+  -i /app/input.jpg \
+  -o /app/output/test_image_cleaned.jpg \
+  -w /app/model.pth
+```
+
+**Как это работает:**
+1. `-v $(pwd)/exported_models/my_model_v3/pytorch_model.pth:/app/model.pth:ro` — монтирует файл модели с хоста в контейнер по пути `/app/model.pth` (только для чтения)
+2. `--segmentation-weights /app/model.pth` — указывает путь **внутри контейнера**, где находится смонтированная модель
+3. Образ не нужно пересобирать — модель подключается динамически при запуске
+
+**Важно**: 
+- Путь к модели в аргументе (`/app/model.pth`) — это путь **внутри контейнера**
+- Путь в `-v` — это путь на **хосте** (`$(pwd)/exported_models/...`)
+- Docker автоматически связывает эти пути при монтировании
+
+### GPU Support
+
+For GPU acceleration, use `--gpus all`:
+
+```bash
+docker run --rm --gpus all \
+  -v /path/to/input/image.jpg:/app/input.jpg:ro \
+  -v /path/to/output:/app/output \
+  ml-app:v1 \
+  --input_path /app/input.jpg \
+  --output_path /app/output/cleaned.jpg
+```
+
+Note: The container will automatically detect and use GPU if available.
+
 ## Testing
 
 Install dev dependencies (includes `pytest`):

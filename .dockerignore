@@ -1,0 +1,140 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+.virtualenv/
+
+# UV package manager
+.uv/
+uv.lock
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+*.cover
+.hypothesis/
+tests/
+
+# Documentation
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# DVC
+.dvc/
+dvc.lock
+dvc.yaml
+dvc_cred.json
+*.dvc
+
+# MLflow
+mlruns/
+
+# Checkpoints (training artifacts, not needed for inference)
+checkpoints/
+checkpoints_kaggle/
+
+# Data (not needed in Docker image)
+data/
+*.zip
+*.tar.gz
+
+# Output files
+output/
+results/
+*_cleaned.*
+*_clean.*
+*_mask.png
+*_mask.jpg
+test_*.jpg
+test_*.jpeg
+test_*.png
+result*.jpg
+result*.jpeg
+clean*.jpg
+clean*.jpeg
+output_clean.jpg
+test_image*.jpg
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+*.pid
+*.seed
+*.pid.lock
+
+# Exported models (we'll copy the default model separately)
+exported_models/
+
+# Config files (training configs, not needed for inference)
+configs/
+
+# Makefile and other build tools
+Makefile
+*.md
+!README.md
+
+# CSV and pickle files (as mentioned in assignment)
+*.csv
+*.pkl
+
+# Other training scripts
+train_*.py
+export_checkpoint.py
+run.py
+scripts/
+
+# Validation reports
+validation_metrics.json
+data_validation_report.json
+data_prepared.flag
+
+# Profiling
+gmon.out
+
