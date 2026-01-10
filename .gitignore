@@ -207,3 +207,5 @@ dvc_cred.json
 .dvc/tmp
 .dvc/config.local
 .dvcignore
+
+model-store
