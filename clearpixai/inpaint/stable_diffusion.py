@@ -57,16 +57,39 @@ class StableDiffusionInpainter(BaseInpainter):
         logger.info("Loading Stable Diffusion inpainting pipeline: %s", settings.model_id)
         from diffusers import AutoPipelineForInpainting
         import torch
+        import time
 
         dtype = torch.float16 if self._device == "cuda" and torch.cuda.is_available() else torch.float32
 
-        self._pipe = AutoPipelineForInpainting.from_pretrained(
-            settings.model_id,
-            torch_dtype=dtype,
-            low_cpu_mem_usage=True,
-            use_safetensors=True,
-            cache_dir=str(self._cache_dir) if self._cache_dir else None,
-        )
+        # Load pipeline with retry logic for network issues
+        max_retries = 5
+        retry_delay = 5
+        
+        for attempt in range(max_retries):
+            try:
+                self._pipe = AutoPipelineForInpainting.from_pretrained(
+                    settings.model_id,
+                    torch_dtype=dtype,
+                    low_cpu_mem_usage=True,
+                    use_safetensors=True,
+                    cache_dir=str(self._cache_dir) if self._cache_dir else None,
+                    resume_download=True,  # Resume interrupted downloads
+                )
+                break  # Success, exit retry loop
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        "Failed to load model (attempt %d/%d): %s. Retrying in %ds...",
+                        attempt + 1,
+                        max_retries,
+                        str(e)[:100],
+                        retry_delay,
+                    )
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error("Failed to load model after %d attempts: %s", max_retries, e)
+                    raise
 
         scheduler_name = (settings.scheduler or "").lower()
         scheduler_cls = None

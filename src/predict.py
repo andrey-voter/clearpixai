@@ -55,6 +55,13 @@ def main():
         help="Path to segmentation model weights (alias for --model_path)",
     )
     parser.add_argument(
+        "--diffusion-backend",
+        type=str,
+        default="sdxl",
+        choices=["sd", "sdxl"],
+        help="Inpainting backend: 'sd' (Stable Diffusion 2.0) or 'sdxl' (SDXL, better quality, default)",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -79,6 +86,9 @@ def main():
 
     # Build configuration
     config = PipelineConfig()
+    
+    # Set diffusion backend
+    config.diffusion.backend = args.diffusion_backend
     
     # Override model path if provided
     if args.model_path:
