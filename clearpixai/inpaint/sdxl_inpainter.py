@@ -81,14 +81,36 @@ class SDXLInpainter(BaseInpainter):
             device = self._device
             dtype = torch.float32
         
-        # Load the pipeline
-        self._pipe = AutoPipelineForInpainting.from_pretrained(
-            settings.model_id,
-            torch_dtype=dtype,
-            variant="fp16" if dtype == torch.float16 else None,
-            use_safetensors=True,
-            cache_dir=str(self._cache_dir) if self._cache_dir else None,
-        )
+        # Load the pipeline with retry logic for network issues
+        import time
+        max_retries = 5
+        retry_delay = 5
+        
+        for attempt in range(max_retries):
+            try:
+                self._pipe = AutoPipelineForInpainting.from_pretrained(
+                    settings.model_id,
+                    torch_dtype=dtype,
+                    variant="fp16" if dtype == torch.float16 else None,
+                    use_safetensors=True,
+                    cache_dir=str(self._cache_dir) if self._cache_dir else None,
+                    resume_download=True,  # Resume interrupted downloads
+                )
+                break  # Success, exit retry loop
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        "Failed to load model (attempt %d/%d): %s. Retrying in %ds...",
+                        attempt + 1,
+                        max_retries,
+                        str(e)[:100],
+                        retry_delay,
+                    )
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error("Failed to load model after %d attempts: %s", max_retries, e)
+                    raise
         
         # Set scheduler
         scheduler_name = (settings.scheduler or "").lower()

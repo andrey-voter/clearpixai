@@ -44,7 +44,7 @@ class DiffusionConfig:
     These defaults are the single source of truth.
     CLI only overrides when explicitly provided.
     """
-    backend: str = "sd"  # Options: "sd", "sdxl"
+    backend: str = "sdxl"  # Options: "sd", "sdxl" (default: sdxl for better quality)
     model_id: str | None = None  # Auto-selected based on backend if None
     prompt: str = (
         "high quality, photorealistic, clean surface, seamless, natural lighting, "
