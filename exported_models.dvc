@@ -1,0 +1,6 @@
+outs:
+- md5: c77b9bb8025d89b679eae5c84d739928.dir
+  size: 2713305678
+  nfiles: 20
+  hash: md5
+  path: exported_models

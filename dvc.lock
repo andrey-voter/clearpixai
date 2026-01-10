@@ -1,0 +1,60 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: uv run python scripts/prepare_data.py
+    deps:
+    - path: clearpixai/training/detector/data/train
+      hash: md5
+      md5: 2b9bab3b2a7dc361506249cb84c8b914.dir
+      size: 1686030378
+      nfiles: 2702
+    - path: clearpixai/training/detector/validate_data.py
+      hash: md5
+      md5: b0cc50a4b52100b6242b88affe4e6290
+      size: 11410
+    - path: scripts/prepare_data.py
+      hash: md5
+      md5: 57fdc377516dd96b8b5dfd86a2a08e48
+      size: 1252
+      isexec: true
+    outs:
+    - path: data_prepared.flag
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    - path: data_validation_report.json
+      hash: md5
+      md5: 802a70c3e00d3402b66d21c6c621d8e7
+      size: 505
+  train:
+    cmd: uv run python clearpixai/training/detector/train_from_config.py 
+      --config configs/train_config.yaml --verbose
+    deps:
+    - path: clearpixai/training/detector/data/train
+      hash: md5
+      md5: 2b9bab3b2a7dc361506249cb84c8b914.dir
+      size: 1686030378
+      nfiles: 2702
+    - path: clearpixai/training/detector/data/val
+      hash: md5
+      md5: eb72d65e538bfd2df8a01f5987239b02.dir
+      size: 236490245
+      nfiles: 366
+    - path: clearpixai/training/detector/train_from_config.py
+      hash: md5
+      md5: 561d4ad441e4a6f79813939ed773736a
+      size: 13113
+    - path: configs/train_config.yaml
+      hash: md5
+      md5: b80288258177b42d0ebbcab2f574c304
+      size: 3302
+    - path: data_prepared.flag
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    outs:
+    - path: checkpoints/
+      hash: md5
+      md5: cda946ee325b2d9d08be7a1c41296812.dir
+      size: 2036087494
+      nfiles: 5

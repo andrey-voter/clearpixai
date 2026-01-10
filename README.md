@@ -45,6 +45,56 @@ Validate your pair dataset before training:
 uv run python clearpixai/training/detector/validate_data.py --data-dir /path/to/data
 ```
 
+## Data Versioning with DVC
+
+This project uses [DVC (Data Version Control)](https://dvc.org/) to manage large datasets and model files outside of Git.
+
+### Physical Storage
+
+- **Datasets**: Stored in DVC cache (`.dvc/cache/`) and remote storage
+  - Training data: `clearpixai/training/detector/data/train/`
+  - Validation data: `clearpixai/training/detector/data/val/`
+- **Models**: Stored in DVC cache and remote storage
+  - Exported models: `exported_models/`
+
+### Getting Started with DVC
+
+After cloning the repository:
+
+```bash
+cd ClearPixAi
+dvc pull
+dvc repro
+```
+
+This will:
+1. Download all datasets and models from remote storage
+2. Run the complete pipeline (prepare → train → evaluate)
+
+### DVC Pipeline
+
+The project includes a DVC pipeline with three stages:
+
+1. **prepare**: Validates and prepares the dataset
+2. **train**: Trains the watermark detection model
+3. **evaluate**: Validates the trained model and exports it
+
+Run individual stages:
+
+```bash
+dvc repro prepare    # Prepare data only
+dvc repro train      # Train model (requires prepare)
+dvc repro evaluate   # Evaluate model (requires train)
+```
+
+### Experiment Plan
+
+The DVC pipeline allows you to:
+- Track different versions of datasets and models
+- Reproduce any experiment with `dvc repro`
+- Compare metrics across experiments using `dvc metrics show`
+- Switch between dataset/model versions using Git tags and `dvc checkout`
+
 ## Run instructions
 
 For a quick walk-through, see `QUICKSTART.md`. Below is the short version.
@@ -59,6 +109,14 @@ or:
 
 ```bash
 pip install -r requirements.txt
+```
+
+**Note**: If using DVC, also install DVC:
+
+```bash
+pip install dvc
+# or
+uv add dvc
 ```
 
 ### Configure training

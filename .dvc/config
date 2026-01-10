@@ -1,0 +1,7 @@
+[core]
+    remote = myremoute
+['remote "myremoute"']
+    url = gdrive://102hE8TduPt4BTT03aXutzZH3ZRZqvnqY
+    gdrive_acknowledge_abuse = true
+    gdrive_use_service_account = true
+    gdrive_service_account_json_file_path = ../dvc_cred.json
