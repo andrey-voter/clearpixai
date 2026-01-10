@@ -199,6 +199,8 @@ cython_debug/
 *.txt
 
 exported_models
+mlruns
+dvc_cred.json
 
 # DVC
 .dvc/cache
