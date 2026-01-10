@@ -54,7 +54,7 @@ training:
   learning_rate: 0.0001  # 1e-4
   
   # Training duration
-  max_epochs: 30
+  max_epochs: 1
   
   # Early stopping
   early_stopping:

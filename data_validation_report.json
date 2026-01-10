@@ -1,0 +1,26 @@
+{
+  "valid": true,
+  "total_pairs": 1640,
+  "valid_pairs": 1640,
+  "invalid_images": 0,
+  "statistics": {
+    "width": {
+      "min": 1243,
+      "max": 2500,
+      "mean": 2046.1018292682927,
+      "median": 1664.0
+    },
+    "height": {
+      "min": 1406,
+      "max": 2500,
+      "mean": 2131.5780487804877,
+      "median": 2500.0
+    },
+    "file_size_mb": {
+      "min": 0.29811573028564453,
+      "max": 1.6908798217773438,
+      "mean": 0.6868846957276508
+    }
+  },
+  "invalid_image_details": []
+}

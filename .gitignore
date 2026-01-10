@@ -199,3 +199,9 @@ cython_debug/
 *.txt
 
 exported_models
+
+# DVC
+.dvc/cache
+.dvc/tmp
+.dvc/config.local
+.dvcignore

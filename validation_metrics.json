@@ -1,0 +1,29 @@
+{
+  "checkpoint": "checkpoints/last.ckpt",
+  "data_dir": "clearpixai/training/detector/data/val",
+  "num_samples": 305,
+  "image_size": 512,
+  "threshold": 0.5,
+  "aggregate_metrics": {
+    "iou": 0.8301474452018738,
+    "dice": 0.9071918725967407,
+    "precision": 0.9012467861175537,
+    "recall": 0.9132159948348999,
+    "accuracy": 0.9892995357513428,
+    "tp": 4181447,
+    "fp": 458178,
+    "fn": 397368,
+    "tn": 74916927
+  },
+  "per_batch_statistics": {
+    "mean_iou": 0.8293112164888626,
+    "std_iou": 0.03671038100812979,
+    "min_iou": 0.7514812350273132,
+    "max_iou": 0.928704559803009,
+    "median_iou": 0.8262701034545898
+  },
+  "quality_assessment": {
+    "quality": "GOOD \u2713",
+    "meets_target": true
+  }
+}

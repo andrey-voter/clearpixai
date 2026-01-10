@@ -1,0 +1,41 @@
+stages:
+  prepare:
+    cmd: uv run python scripts/prepare_data.py
+    deps:
+      - clearpixai/training/detector/data/train
+      - clearpixai/training/detector/validate_data.py
+      - scripts/prepare_data.py
+    outs:
+      - data_prepared.flag
+    metrics:
+      - data_validation_report.json
+
+  train:
+    cmd: uv run python clearpixai/training/detector/train_from_config.py --config configs/train_config.yaml --verbose
+    deps:
+      - data_prepared.flag
+      - clearpixai/training/detector/data/train
+      - clearpixai/training/detector/data/val
+      - configs/train_config.yaml
+      - clearpixai/training/detector/train_from_config.py
+    outs:
+      - checkpoints/
+
+  evaluate:
+    cmd: |
+      uv run python clearpixai/training/detector/validate.py \
+        --checkpoint checkpoints/last.ckpt \
+        --data-dir clearpixai/training/detector/data/val \
+        --output validation_metrics.json && \
+      uv run python clearpixai/training/detector/export_model.py \
+        --checkpoint checkpoints/last.ckpt \
+        --output-dir exported_models/latest \
+        --model-name "watermark-detector-latest"
+    deps:
+      - checkpoints/last.ckpt
+      - clearpixai/training/detector/data/val
+      - clearpixai/training/detector/validate.py
+      - clearpixai/training/detector/export_model.py
+    outs:
+      - validation_metrics.json
+
